@@ -4,7 +4,7 @@ A live character your users can talk to — voice, or voice and video. She liste
 speaks, so you can interrupt her mid-sentence and she stops, the way a person stops.
 
 ```bash
-npm install realtime-avatar
+npm install --save-exact realtime-avatar@0.14.0
 ```
 
 ```ts
@@ -146,6 +146,25 @@ Every adapter takes the same two hooks: `authorize` gates the request, `session`
 call. Policy — `instructions`, `maxSeconds`, `voice`, `video` — is decided in `session`, on
 your server. A route that spreads the request body into `startCall` hands your caller your
 system prompt and your bill.
+
+### Native connection facts
+
+LiveKit owns media transport, connection state, and reconnection. Use its
+`useConnectionState()` and `useConnectionQualityIndicator({ participant })` hooks, or
+`RoomEvent` callbacks, to build your product's network UI. Their values already use
+`ConnectionState`, `ConnectionQuality`, and `Track.StreamState` from `livekit-client`.
+For current receiver measurements, `RemoteVideoTrack.getReceiverStats()` and
+`RemoteAudioTrack.getReceiverStats()` return LiveKit's exported `VideoReceiverStats` and
+`AudioReceiverStats` types.
+Keep these native types in process; there is no SDK-specific JSON mirror to maintain.
+
+Retain the app's session-to-room association (`room_name`, timestamps and participant
+identity), adding the server-observed room SID when exact room-lifetime lookup needs it.
+LiveKit owns participant connection history; a participant SID identifies one incarnation.
+Use these references to look up details in LiveKit's own diagnostics. The existing quality governor
+and opt-in adaptive playout are product policies over LiveKit facts; setting
+`adaptiveQuality={false}` releases the manual quality ceiling while LiveKit's bandwidth
+adaptation continues. Adaptive playout reads only public LiveKit track reports.
 
 ### Importing a server entry into a browser build throws
 
