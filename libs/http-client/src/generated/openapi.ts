@@ -280,6 +280,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/recordings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List session recordings
+         * @description List this workspace's private recordings, newest first. Metadata uses stable recording IDs and retainedUntil; download URLs are issued separately.
+         *
+         *     Requires an API key with the `recordings:read` scope.
+         */
+        get: operations["listRecordings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/recordings/{recordingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get recording status
+         * @description Get durable metadata for an owned recording. Pending recordings reconcile with the recording provider. Retention expiry preserves metadata and blocks media access.
+         *
+         *     Requires an API key with the `recordings:read` scope.
+         */
+        get: operations["getRecording"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/recordings/{recordingId}/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a temporary recording download URL
+         * @description Issue a signed GET URL for a ready recording. The URL supports byte ranges and defaults to one hour, capped by retainedUntil. Request a new URL with this API key when it expires; URL expiry does not delete media. Keep this URL private.
+         *
+         *     Requires an API key with the `recordings:read` scope.
+         */
+        get: operations["getRecordingAccess"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/usage/sessions": {
         parameters: {
             query?: never;
@@ -339,6 +405,7 @@ export interface components {
             participant_name?: string;
             character_name?: string;
             queue_ticket_id?: string;
+            /** @description Optional room label. RTA appends the session identity; use the returned grant's room name to connect. A new call never joins an existing session. */
             room_name?: string;
             /**
              * @description The realtime source. Creation is image-only — every avatar grows its own PLATFORM-GENERATED looping source video from the uploaded portrait — so this is always "source_video".
@@ -461,6 +528,11 @@ export interface components {
                 url: string;
                 secret: string;
             };
+            /**
+             * @description Server-owned recording policy; omitted means off. Audio includes user and avatar audio.
+             * @enum {string}
+             */
+            recording?: "off" | "audio" | "video" | "audio_video";
             client_metadata?: {
                 [key: string]: string;
             };
@@ -499,6 +571,46 @@ export interface components {
             idle_timeout_seconds: number;
             /** @default 0 */
             max_session_seconds: number;
+            readonly recording?: {
+                sessionId: string;
+                recordingId: string;
+                /** @enum {string} */
+                mode: "audio" | "video" | "audio_video";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                retainedUntil: string;
+                /** @enum {string} */
+                status: "pending" | "recording" | "processing" | "expired";
+            } | {
+                sessionId: string;
+                recordingId: string;
+                /** @enum {string} */
+                mode: "audio" | "video" | "audio_video";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                retainedUntil: string;
+                /** @constant */
+                status: "ready";
+                /** @enum {string} */
+                mediaType: "audio/mp4" | "video/mp4";
+                sizeBytes: number;
+                durationMs: number | null;
+            } | {
+                sessionId: string;
+                recordingId: string;
+                /** @enum {string} */
+                mode: "audio" | "video" | "audio_video";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                retainedUntil: string;
+                /** @constant */
+                status: "failed";
+                /** @enum {string} */
+                errorCode: "recording_failed" | "recording_unavailable";
+            };
         };
         LiveKitCapacitySnapshot: {
             capacity_pool: string;
@@ -660,7 +772,7 @@ export interface components {
              *       "avatars:read"
              *     ]
              */
-            scopes: ("*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "usage:write")[];
+            scopes: ("*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "recordings:read" | "usage:write")[];
             spendLimitCreditMicros?: number | null;
             expiresAt?: string | null;
         };
@@ -672,7 +784,7 @@ export interface components {
             redactedKey: string;
             /** @default false */
             canReveal: boolean;
-            scopes: ("*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "usage:write")[];
+            scopes: ("*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "recordings:read" | "usage:write")[];
             /** @enum {string} */
             status: "active" | "revoked" | "expired";
             spendLimitCreditMicros: number | null;
@@ -740,6 +852,96 @@ export interface components {
             from: string;
             /** Format: date-time */
             to: string;
+        };
+        Recording: {
+            sessionId: string;
+            recordingId: string;
+            /** @enum {string} */
+            mode: "audio" | "video" | "audio_video";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            retainedUntil: string;
+            /** @enum {string} */
+            status: "pending" | "recording" | "processing" | "expired";
+        } | {
+            sessionId: string;
+            recordingId: string;
+            /** @enum {string} */
+            mode: "audio" | "video" | "audio_video";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            retainedUntil: string;
+            /** @constant */
+            status: "ready";
+            /** @enum {string} */
+            mediaType: "audio/mp4" | "video/mp4";
+            sizeBytes: number;
+            durationMs: number | null;
+        } | {
+            sessionId: string;
+            recordingId: string;
+            /** @enum {string} */
+            mode: "audio" | "video" | "audio_video";
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            retainedUntil: string;
+            /** @constant */
+            status: "failed";
+            /** @enum {string} */
+            errorCode: "recording_failed" | "recording_unavailable";
+        };
+        ListRecordingsResponse: {
+            data: ({
+                sessionId: string;
+                recordingId: string;
+                /** @enum {string} */
+                mode: "audio" | "video" | "audio_video";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                retainedUntil: string;
+                /** @enum {string} */
+                status: "pending" | "recording" | "processing" | "expired";
+            } | {
+                sessionId: string;
+                recordingId: string;
+                /** @enum {string} */
+                mode: "audio" | "video" | "audio_video";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                retainedUntil: string;
+                /** @constant */
+                status: "ready";
+                /** @enum {string} */
+                mediaType: "audio/mp4" | "video/mp4";
+                sizeBytes: number;
+                durationMs: number | null;
+            } | {
+                sessionId: string;
+                recordingId: string;
+                /** @enum {string} */
+                mode: "audio" | "video" | "audio_video";
+                /** Format: date-time */
+                createdAt: string;
+                /** Format: date-time */
+                retainedUntil: string;
+                /** @constant */
+                status: "failed";
+                /** @enum {string} */
+                errorCode: "recording_failed" | "recording_unavailable";
+            })[];
+            nextCursor: string | null;
+        };
+        RecordingAccessResponse: {
+            recordingId: string;
+            /** Format: uri */
+            url: string;
+            /** Format: date-time */
+            expiresAt: string;
         };
         ListAvatarsResponse: {
             data: {
@@ -964,9 +1166,9 @@ export interface components {
              * @description Present on `403 insufficient_scope` — the one scope this operation needed and the key did not carry. Repeated in the `WWW-Authenticate` challenge as `scope=`.
              * @enum {string}
              */
-            requiredScope?: "*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "usage:write";
+            requiredScope?: "*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "recordings:read" | "usage:write";
             /** @description Present alongside `requiredScope` — the scopes the presented key does carry. */
-            grantedScopes?: ("*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "usage:write")[];
+            grantedScopes?: ("*" | "api_keys:write" | "credits:read" | "avatars:read" | "avatars:write" | "realtime:write" | "usage:read" | "recordings:read" | "usage:write")[];
             /** @description Present on 402 — where to send the user to top up. */
             billingUrl?: string;
             /** @description On concurrency_limit_reached: the workspace's concurrent session limit. */
@@ -1848,6 +2050,220 @@ export interface operations {
             };
             /** @description The key lacks the scope for this operation, or the tenant is not active. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Error. Route-dependent: 400 (a field this route cannot honour — see `portraitUrl` on `UpdateAvatarRequest`), 402 (insufficient credits or spend limit), 404 (no such avatar, voice, or key for this tenant — the message often reads "does not belong to this tenant", which is a missing id and not a permission failure), 409 (the resource is not in a state that accepts this write — a stale `expectedRevision`, a render already in flight, or a mint that asked for a clip library still building), 411 (`POST /v1/assets/remote` only — the origin serving `remoteUrl` sent no `content-length`, so the platform will not stream it), 422 (strict schema rejection, or a motion description the safety screen refused), 429 (rate limited), 502 (upstream render failed), 503 (a dependency this route needs is unavailable — retryable, and nothing was written), 500 (unhandled). Switch on `code` where present, else `status`. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRecordings: {
+        parameters: {
+            query?: {
+                /** @description Filter to one session. */
+                sessionId?: string;
+                limit?: number;
+                /** @description The previous response's nextCursor. */
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recordings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListRecordingsResponse"];
+                };
+            };
+            /** @description Invalid query */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Missing, malformed, revoked, or expired key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The key lacks the scope for this operation, or the tenant is not active. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Error. Route-dependent: 400 (a field this route cannot honour — see `portraitUrl` on `UpdateAvatarRequest`), 402 (insufficient credits or spend limit), 404 (no such avatar, voice, or key for this tenant — the message often reads "does not belong to this tenant", which is a missing id and not a permission failure), 409 (the resource is not in a state that accepts this write — a stale `expectedRevision`, a render already in flight, or a mint that asked for a clip library still building), 411 (`POST /v1/assets/remote` only — the origin serving `remoteUrl` sent no `content-length`, so the platform will not stream it), 422 (strict schema rejection, or a motion description the safety screen refused), 429 (rate limited), 502 (upstream render failed), 503 (a dependency this route needs is unavailable — retryable, and nothing was written), 500 (unhandled). Switch on `code` where present, else `status`. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRecording: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recording */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recording"];
+                };
+            };
+            /** @description Missing, malformed, revoked, or expired key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The key lacks the scope for this operation, or the tenant is not active. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Recording not found in this workspace */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Recording status temporarily unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Error. Route-dependent: 400 (a field this route cannot honour — see `portraitUrl` on `UpdateAvatarRequest`), 402 (insufficient credits or spend limit), 404 (no such avatar, voice, or key for this tenant — the message often reads "does not belong to this tenant", which is a missing id and not a permission failure), 409 (the resource is not in a state that accepts this write — a stale `expectedRevision`, a render already in flight, or a mint that asked for a clip library still building), 411 (`POST /v1/assets/remote` only — the origin serving `remoteUrl` sent no `content-length`, so the platform will not stream it), 422 (strict schema rejection, or a motion description the safety screen refused), 429 (rate limited), 502 (upstream render failed), 503 (a dependency this route needs is unavailable — retryable, and nothing was written), 500 (unhandled). Switch on `code` where present, else `status`. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRecordingAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recordingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Temporary access */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordingAccessResponse"];
+                };
+            };
+            /** @description Missing, malformed, revoked, or expired key. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The key lacks the scope for this operation, or the tenant is not active. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Recording not found in this workspace */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Recording not ready */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Recording retention expired */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Recording media temporarily unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
