@@ -528,6 +528,18 @@
                     "type": "number",
                     "minimum": 0,
                     "maximum": 100
+                  },
+                  "weights": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                    },
+                    "additionalProperties": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
                   }
                 },
                 "required": [
@@ -773,6 +785,106 @@
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
+          "releaseIdentity": {
+            "readOnly": true,
+            "description": "Returned only for X-RTA-Release-Evidence: 1. Omitted by default for strict SDK compatibility. Missing deployment or worker evidence remains null.",
+            "type": "object",
+            "properties": {
+              "deploymentId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "workerRevision": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{40}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "deploymentSource": {
+                    "type": "string",
+                    "const": "cloudflare-worker-version"
+                  },
+                  "workerSource": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "const": "authenticated-worker-heartbeat"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "workerId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 160
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "podStartedAtMs": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "workerObservedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "deploymentSource",
+                  "workerSource",
+                  "workerId",
+                  "podStartedAtMs",
+                  "workerObservedAt"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "deploymentId",
+              "workerRevision",
+              "provenance"
+            ],
+            "additionalProperties": false
+          },
           "status": {
             "default": "ready",
             "type": "string",
@@ -2141,6 +2253,106 @@
                   "minLength": 8,
                   "maxLength": 80
                 },
+                "releaseIdentity": {
+                  "readOnly": true,
+                  "description": "Returned only for X-RTA-Release-Evidence: 1. Omitted by default for strict client compatibility. Evidence is stored against this session; missing evidence remains null.",
+                  "type": "object",
+                  "properties": {
+                    "deploymentId": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "workerRevision": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "provenance": {
+                      "type": "object",
+                      "properties": {
+                        "deploymentSource": {
+                          "type": "string",
+                          "const": "cloudflare-worker-version"
+                        },
+                        "workerSource": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "const": "authenticated-worker-heartbeat"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "workerId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 160
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "podStartedAtMs": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "workerObservedAt": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "deploymentSource",
+                        "workerSource",
+                        "workerId",
+                        "podStartedAtMs",
+                        "workerObservedAt"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "deploymentId",
+                    "workerRevision",
+                    "provenance"
+                  ],
+                  "additionalProperties": false
+                },
                 "avatarId": {
                   "type": [
                     "string",
@@ -3179,6 +3391,18 @@
                     "type": "number",
                     "minimum": 0,
                     "maximum": 100
+                  },
+                  "weights": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                    },
+                    "additionalProperties": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
                   }
                 },
                 "required": [
@@ -3372,6 +3596,18 @@
                 "type": "number",
                 "minimum": 0,
                 "maximum": 100
+              },
+              "weights": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                },
+                "additionalProperties": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                }
               }
             },
             "required": [
@@ -3715,6 +3951,18 @@
                     "type": "number",
                     "minimum": 0,
                     "maximum": 100
+                  },
+                  "weights": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+                    },
+                    "additionalProperties": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
                   }
                 },
                 "required": [
@@ -4004,6 +4252,253 @@
       "bearerAuth": []
     }
   ],
+  "x-error-semantics": {
+    "description": "What a failure `code` means to the caller. `statuses` is the set of HTTP statuses a code may legitimately accompany — a code arriving on any other status is a mismatch and must be answered by the status alone. `message` is authored product copy safe to show a user. `retryable` says whether the same request is worth sending again. Codes listed in `x-error-codes-uncopied` are recognised by the platform but have their copy written elsewhere, because the sentence names a number this table cannot know (a plan ceiling, an amount owed); treat them as known, and prefer the server's own `message`.",
+    "codes": {
+      "bad_request": {
+        "statuses": [
+          400
+        ],
+        "message": "Check the request and try again.",
+        "retryable": false
+      },
+      "unauthorized": {
+        "statuses": [
+          401
+        ],
+        "message": "Authentication is required to use Realtime Avatar.",
+        "retryable": false
+      },
+      "payment_required": {
+        "statuses": [
+          402
+        ],
+        "message": "Add credits to continue using realtime avatars.",
+        "retryable": false
+      },
+      "forbidden": {
+        "statuses": [
+          403
+        ],
+        "message": "This API key does not have access to that action.",
+        "retryable": false
+      },
+      "not_found": {
+        "statuses": [
+          404
+        ],
+        "message": "We could not find that avatar or resource.",
+        "retryable": false
+      },
+      "method_not_allowed": {
+        "statuses": [
+          405
+        ],
+        "message": "This request method is not supported.",
+        "retryable": false
+      },
+      "not_acceptable": {
+        "statuses": [
+          406
+        ],
+        "message": "The requested response format is not supported.",
+        "retryable": false
+      },
+      "request_aborted": {
+        "statuses": [
+          408
+        ],
+        "message": "The session request was cancelled.",
+        "retryable": false
+      },
+      "conflict": {
+        "statuses": [
+          409
+        ],
+        "message": "That request is already in progress. Try again in a moment.",
+        "retryable": true
+      },
+      "length_required": {
+        "statuses": [
+          411
+        ],
+        "message": "A request content length is required.",
+        "retryable": false
+      },
+      "payload_too_large": {
+        "statuses": [
+          413
+        ],
+        "message": "The request is too large.",
+        "retryable": false
+      },
+      "unprocessable_entity": {
+        "statuses": [
+          422
+        ],
+        "message": "Check the request and try again.",
+        "retryable": false
+      },
+      "rate_limited": {
+        "statuses": [
+          429
+        ],
+        "message": "Too many realtime requests. Please slow down and retry.",
+        "retryable": true
+      },
+      "internal_error": {
+        "statuses": [
+          500
+        ],
+        "message": "The session service encountered an error. Try again.",
+        "retryable": true
+      },
+      "unavailable": {
+        "statuses": [
+          503
+        ],
+        "message": "Realtime Avatar is temporarily unavailable. Try again in a moment.",
+        "retryable": true
+      },
+      "insufficient_scope": {
+        "statuses": [
+          403
+        ],
+        "message": "This API key is missing a required permission.",
+        "retryable": false
+      },
+      "loop_pending": {
+        "statuses": [
+          409
+        ],
+        "message": "An avatar loop update is still in progress. Try again shortly.",
+        "retryable": true
+      },
+      "rate_limit_exceeded": {
+        "statuses": [
+          429
+        ],
+        "message": "Too many realtime requests. Please slow down and retry.",
+        "retryable": true
+      },
+      "upstream_failed": {
+        "statuses": [
+          500,
+          502,
+          503
+        ],
+        "message": "The session service could not complete the request. Try again.",
+        "retryable": true
+      },
+      "upstream_unreachable": {
+        "statuses": [
+          502,
+          503
+        ],
+        "message": "The session service could not be reached. Try again.",
+        "retryable": true
+      },
+      "invalid_upstream_response": {
+        "statuses": [
+          502
+        ],
+        "message": "The session service returned an invalid response. Try again.",
+        "retryable": true
+      },
+      "upstream_timeout": {
+        "statuses": [
+          504
+        ],
+        "message": "The session service took too long to respond. Try again.",
+        "retryable": true
+      },
+      "capacity_unavailable": {
+        "statuses": [
+          503
+        ],
+        "message": "Session availability could not be checked. Try again.",
+        "retryable": true
+      },
+      "session_dispatch_failed": {
+        "statuses": [
+          503
+        ],
+        "message": "The avatar session could not be started. Try again.",
+        "retryable": true
+      },
+      "admission_unavailable": {
+        "statuses": [
+          503
+        ],
+        "message": "Session admission is temporarily unavailable. Try again.",
+        "retryable": true
+      },
+      "service_warming": {
+        "statuses": [
+          503
+        ],
+        "message": "Realtime Avatar is warming up. Try again in a moment.",
+        "retryable": true
+      },
+      "avatar_not_ready": {
+        "statuses": [
+          409
+        ],
+        "message": "This avatar is still being built — it is usually ready within a minute. Try again then.",
+        "retryable": true
+      },
+      "clip_library_not_ready": {
+        "statuses": [
+          409
+        ],
+        "message": "This avatar's motion clips are still rendering. Try again in a minute.",
+        "retryable": true
+      },
+      "recording_unsupported": {
+        "statuses": [
+          501
+        ],
+        "message": "Session recording is not enabled for this deployment.",
+        "retryable": false
+      },
+      "recording_requires_new_room": {
+        "statuses": [
+          422
+        ],
+        "message": "Recording requires a new session room. Start a fresh session to record it.",
+        "retryable": false
+      },
+      "recording_unavailable": {
+        "statuses": [
+          503
+        ],
+        "message": "Session recording is temporarily unavailable. Try again in a moment.",
+        "retryable": true
+      }
+    }
+  },
+  "x-error-codes-uncopied": [
+    "capacity_busy",
+    "concurrency_limit_reached",
+    "insufficient_credits",
+    "spend_limit_exceeded",
+    "billing_required",
+    "network_error"
+  ],
+  "x-error-message-shape": {
+    "description": "A message matching any of these patterns must NOT be shown to a user; fall back to the `message` in x-error-semantics instead. Rebuild each with new RegExp(source, flags). A message that passes is truncated to maxLength characters before display.",
+    "patterns": {
+      "machine": {
+        "source": "[_=<>{}\\[\\]|\\\\$`]|\\w+\\.\\w+\\.\\w|\\S:\\d|\\w\\(\\)|^\\s*(?:at|File)\\b|\\bTraceback \\(most recent call last\\)",
+        "flags": "mu"
+      },
+      "locator": {
+        "source": "https?://|/[\\w.-]+/|[\\w.+-]+@[\\w.-]+\\.[a-z]{2,}|\\bbearer\\s|[\\r\\n]",
+        "flags": "i"
+      }
+    },
+    "maxLength": 180
+  },
   "paths": {
     "/v1/realtime/livekit/capacity": {
       "get": {
@@ -4063,6 +4558,20 @@
     "/v1/realtime/livekit/session": {
       "post": {
         "operationId": "createLiveKitSession",
+        "parameters": [
+          {
+            "name": "X-RTA-Release-Evidence",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "description": "Send 1 to include optional session-bound releaseIdentity in this response. Without this opt-in the field is omitted for strict client compatibility. Capture and storage are independent of this header; missing evidence remains null. Older servers may ignore this header."
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -5498,6 +6007,18 @@
         "description": "Per-second billable detail. The window defaults to the trailing 30 days and is CLAMPED to 90 — a wider range is served narrowed, not refused, so read back the returned from/to.\n\nRequires an API key with the `usage:read` scope.",
         "parameters": [
           {
+            "name": "X-RTA-Release-Evidence",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "description": "Send 1 to include optional session-bound releaseIdentity in this response. Without this opt-in the field is omitted for strict client compatibility. Capture and storage are independent of this header; missing evidence remains null. Older servers may ignore this header."
+          },
+          {
             "name": "from",
             "in": "query",
             "required": false,
@@ -5599,7 +6120,7 @@
   },
   "x-clip-contract": {
     "source": "/character-motion.ts",
-    "sha256": "418d21cab4b8d96ba5202235df03b1888d39a19615ad7ed2bd5c4bab69bd787d"
+    "sha256": "d73d23691e9ad06215b23df390b7fd9985bab052bf43641f3324e4cc66662d20"
   },
   "x-connection-history-contract": {
     "source": "/connection-history.contract.ts",
