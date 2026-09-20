@@ -11,6 +11,7 @@ import { clipLibraryResponseSchema, clipLibraryUpdateSchema } from "./generated/
 import { recordingModeSchema, recordingArtifactSchema, listRecordingsQuerySchema, listRecordingsResponseSchema, recordingAccessResponseSchema } from "./generated/recording.ts";
 import type { ConnectionHistoryResponse } from "./generated/connection-history.ts";
 import { liveKitSessionGrantSchema } from "../../client/src/wire.ts";
+import { transcriptionToWire } from "./generated/transcription.ts";
 import type {
   Asset,
   ListSessionsOptions,
@@ -38,7 +39,7 @@ import type {
 const DEFAULT_BASE_URL = "https://realtimeavatar.ai/api/v1";
 
 /** Must equal the version in package.json — a test asserts it, so drift fails CI. */
-export const SDK_VERSION = "0.20.0";
+export const SDK_VERSION = "0.21.0";
 
 
 
@@ -132,6 +133,7 @@ export class RealtimeAvatar {
     };
     if (options.instructions !== undefined) body.instructions = options.instructions;
     if (options.camera !== undefined) body.camera = options.camera;
+    if (options.transcription !== undefined) body.transcription = transcriptionToWire(options.transcription);
     if (options.context !== undefined) {
       body.initial_context = options.context.map((m) => ({ role: m.role, content: m.content }));
     }

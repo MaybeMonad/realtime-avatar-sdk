@@ -442,6 +442,12 @@ export interface components {
              * @enum {string}
              */
             stt_mode: "server" | "off";
+            /** @description Optional speech recognition hints. Omit language_codes or send [] for automatic multilingual detection. Custom vocabulary biases recognition; at most 100 relevant terms is recommended. It is not a character instruction or a guarantee of recognition accuracy or latency. */
+            transcription?: {
+                language_codes?: string[];
+                custom_vocabulary?: string[];
+            };
+            camera?: boolean;
             video_cache_id?: string | null;
             voice?: ({
                 /** @constant */
@@ -565,9 +571,10 @@ export interface components {
             /** @description DEPRECATED, no-op. Accepted and ignored. The faster hesitation ceiling this requested is now the default for every session, so sending it changes nothing. Safe to stop sending; the field is retained only so existing callers do not break. */
             fast_endpointing?: boolean;
             require_ready_clip_library?: boolean;
-            camera?: boolean;
         };
         LiveKitSessionGrant: {
+            /** @description Returned only for X-RTA-Observability: identity-v1 after successful platform billing attachment. The authoritative billing hold tenant ID; never client metadata or provider identity. Omitted by default and on failed or queued responses. Older servers may omit it. */
+            readonly usage_account_id?: string;
             /** @description Returned only for X-RTA-Release-Evidence: 1. Omitted by default for strict SDK compatibility. Missing deployment or worker evidence remains null. */
             readonly releaseIdentity?: {
                 deploymentId: string | null;
@@ -601,6 +608,7 @@ export interface components {
              * @enum {string}
              */
             stt_mode: "server" | "off";
+            camera?: boolean;
             /** @default false */
             room_created: boolean;
             /** @default false */
@@ -658,7 +666,6 @@ export interface components {
                 /** Format: date-time */
                 expiresAt: string;
             };
-            camera?: boolean;
         };
         LiveKitCapacitySnapshot: {
             capacity_pool: string;
@@ -1330,6 +1337,8 @@ export interface operations {
             header?: {
                 /** @description Send 1 to include optional session-bound releaseIdentity in this response. Without this opt-in the field is omitted for strict client compatibility. Capture and storage are independent of this header; missing evidence remains null. Older servers may ignore this header. */
                 "X-RTA-Release-Evidence"?: "1";
+                /** @description Send exactly identity-v1 to include optional usage_account_id on a successful mint after billing attachment. Sourced only from the platform billing hold tenant ID. Other or missing values omit the field; failures and queued responses never include it. Success responses are Cache-Control: no-store. Older servers may omit the field. Independent of X-RTA-Release-Evidence and connection_history policy. */
+                "X-RTA-Observability"?: "identity-v1";
             };
             path?: never;
             cookie?: never;
