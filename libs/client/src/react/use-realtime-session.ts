@@ -496,6 +496,8 @@ export function useRealtimeSession<T extends LLMProvider = LLMProvider>(
   // ── ended moment: fire once with the LABELED reason ──
   useEffect(() => {
     if (phaseKind === "ended") {
+      // A retained timeout snapshot belongs only to the call that produced it.
+      lastTurnRef.current = null;
       if (!endedFiredRef.current) {
         endedFiredRef.current = true;
         const inner = lifecycle.phase.kind === "ended" ? lifecycle.phase.reason : undefined;
@@ -586,6 +588,7 @@ export function useRealtimeSession<T extends LLMProvider = LLMProvider>(
 
   const end = useCallback((reason?: EndReason) => {
     if (reason) lastLabeledEndReasonRef.current = reason;
+    lastTurnRef.current = null;
     requestGracefulClose();
     lifecycle.reset();
   }, [lifecycle, requestGracefulClose]);

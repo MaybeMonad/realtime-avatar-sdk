@@ -93,6 +93,7 @@ function fixture() {
   session.registerTurnSender(sender);
   return {
     session, messages, timeouts, render, sender, activity: () => activity,
+    setPhase(kind: "live" | "ended") { controlled.lifecycle.phase.kind = kind; return render(); },
     tick(ms = 1000) { now += ms; for (const callback of timers) callback(); },
   };
 }
@@ -183,17 +184,24 @@ test("timeout retains resolved source and instructions for retries with linked n
   }
 });
 
-test("default transcript adapters declare client_stt and reset clears retry state", async () => {
-  const f = fixture();
-  await f.session.createTranscriptSender()("Recognized text");
-  assert.equal(f.messages[0].attributes["rta.declared_input_source"], "client_stt");
-  assert.equal(f.messages[0].attributes["rta.input_source_declaration_scope"], "adapter");
-  f.session.reset();
-  f.session.retryTurn();
-  assert.equal(f.messages.length, 1);
-  await f.session.sendTurn("Fresh turn");
-  assert.equal(f.messages[1].attributes["rta.retry_of_turn_id"], undefined);
-  assert.equal(f.messages[1].attributes["rta.declared_input_source"], undefined);
+test("default adapters declare client_stt and call termination clears retained retry state", async () => {
+  for (const action of ["reset", "end", "worker-ended"] as const) {
+    const f = fixture();
+    await f.session.createTranscriptSender()("Recognized text");
+    assert.equal(f.messages[0].attributes["rta.declared_input_source"], "client_stt");
+    assert.equal(f.messages[0].attributes["rta.input_source_declaration_scope"], "adapter");
+    f.tick(2000);
+    if (action === "worker-ended") f.setPhase("ended");
+    else f.session[action]();
+    f.session.retryTurn();
+    assert.equal(f.messages.length, 1, action);
+    const nextCall = f.setPhase("live");
+    nextCall.retryTurn();
+    assert.equal(f.messages.length, 1, "a new call cannot retry input from an ended call");
+    await nextCall.sendTurn("Fresh turn");
+    assert.equal(f.messages[1].attributes["rta.retry_of_turn_id"], undefined);
+    assert.equal(f.messages[1].attributes["rta.declared_input_source"], undefined);
+  }
 });
 
 test("closing turns keep their control attributes and do not overwrite user retry provenance", async () => {
