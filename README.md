@@ -281,6 +281,34 @@ each. Hints bias recognition rather than guaranteeing a spelling or faster
 response. They do not change character instructions. This configuration is set
 when the call starts; changing the object does not update an active call.
 
+## Input source in transcripts
+
+`useRealtimeSession` on React and React Native observes normal `sendTurn` calls as
+text automatically. If your app already recognizes speech, bind its final-text
+callback once per session:
+
+```ts
+await session.sendTurn("Hello");
+const sendTranscript = session.createTranscriptSender({ inputSource: "client_stt" });
+await sendTranscript("Recognized words");
+await sendTranscript("Typed correction", { inputSource: "text" });
+// A single send can also declare its source:
+await session.sendTurn("Recognized words", { inputSource: "client_stt" });
+```
+
+The adapter defaults to `client_stt` and captures its source at creation. An explicit
+per-send declaration wins for that send only. Only `text` and `client_stt` are accepted
+as client declarations; the transport observation stays `text`. The adapter accepts
+recognized text; it does not run speech recognition. Existing `instructions` still work.
+`retryTurn()` retains the original resolved declaration and scope, even after a timeout,
+and sends a new `turn_id` linked to the previous attempt by `retry_of_turn_id`.
+
+With the matching platform and Worker integration, the existing signed end-of-call
+transcript webhook carries optional user-segment `message_id`, `turn_id`,
+`retry_of_turn_id`, `input_source`, and `input_provenance`. `verifyTranscript` preserves
+these fields. Missing legacy provenance stays missing: treat it as unknown, never text.
+This SDK change alone does not establish server-side capture or webhook delivery.
+
 ## Let the character see your camera
 
 Authorize camera sharing in your server's call policy:

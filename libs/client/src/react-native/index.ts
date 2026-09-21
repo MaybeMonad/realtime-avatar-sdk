@@ -143,8 +143,12 @@ export {
   type RealtimeSessionMedia,
   type ReconnectingEvent,
   type TurnTimeoutEvent,
+  type SendTurnOptions,
+  type TranscriptSender,
+  type TranscriptSenderOptions,
   type UseRealtimeSessionInput,
 } from "../react/use-realtime-session";
+export type { DeclaredInputSource, InputSource, InputProvenance } from "../../../http-client/src/types";
 export {
   mapTurnState,
   type ApproachingEndReason,
