@@ -3,8 +3,8 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import { build } from "esbuild";
-import type { RealtimeSessionApi, SendTurnOptions, TranscriptSenderOptions } from "../src/react/index.ts";
-import type { RealtimeSessionApi as NativeSessionApi, InputProvenance, DeclaredInputSource } from "../src/react-native/index.ts";
+import type { DeclaredInputSource, RealtimeSessionApi, SendTurnOptions, TranscriptSenderOptions } from "../src/react/index.ts";
+import type { RealtimeSessionApi as NativeSessionApi, DeclaredInputSource as NativeDeclaredInputSource } from "../src/react-native/index.ts";
 
 // Exercise the real session hook, including serialization, adapters, and its watchdog.
 // Only React scheduling, the surrounding lifecycle, clock, and room transport are controlled.
@@ -227,13 +227,14 @@ test("closing turns keep their control attributes and do not overwrite user retr
 });
 
 // Compile-time consumer contracts for both public entries. Never invoked.
-function publicTypes(web: RealtimeSessionApi, native: NativeSessionApi, provenance: InputProvenance) {
+function publicTypes(web: RealtimeSessionApi, native: NativeSessionApi) {
   const clientSource: DeclaredInputSource = "client_stt";
+  const nativeSource: NativeDeclaredInputSource = clientSource;
   const same: RealtimeSessionApi = native;
-  void same.createTranscriptSender({ inputSource: clientSource })("Final transcript");
-  void provenance.observed_source;
-  // @ts-expect-error Only a Worker can observe server STT; clients cannot declare it.
+  void same.createTranscriptSender({ inputSource: nativeSource })("Recognized speech");
+  void web.sendTurn("Typed text", { inputSource: "text" });
+  // @ts-expect-error Clients cannot declare server recognition.
   void web.sendTurn("Text", { inputSource: "server_stt" });
-  // @ts-expect-error Unknown is an output source, not a client declaration.
+  // @ts-expect-error Clients can only declare text or client STT.
   native.createTranscriptSender({ inputSource: "unknown" });
 }

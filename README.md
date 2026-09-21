@@ -281,7 +281,7 @@ each. Hints bias recognition rather than guaranteeing a spelling or faster
 response. They do not change character instructions. This configuration is set
 when the call starts; changing the object does not update an active call.
 
-## Input source in transcripts
+## Input source on room messages
 
 `useRealtimeSession` on React and React Native observes normal `sendTurn` calls as
 text automatically. If your app already recognizes speech, bind its final-text
@@ -303,11 +303,50 @@ recognized text; it does not run speech recognition. Existing `instructions` sti
 `retryTurn()` retains the original resolved declaration and scope, even after a timeout,
 and sends a new `turn_id` linked to the previous attempt by `retry_of_turn_id`.
 
-With the matching platform and Worker integration, the existing signed end-of-call
-transcript webhook carries optional user-segment `message_id`, `turn_id`,
-`retry_of_turn_id`, `input_source`, and `input_provenance`. `verifyTranscript` preserves
-these fields. Missing legacy provenance stays missing: treat it as unknown, never text.
-This SDK change alone does not establish server-side capture or webhook delivery.
+Consumers subscribed to the same room's `lk.chat` text streams can read these
+attributes directly. The existing `useChat` hook exposes them on received messages:
+
+```ts
+import { useChat } from "realtime-avatar/react";
+
+// Inside a component connected to the receiving room.
+const { chatMessages } = useChat();
+const inputs = chatMessages.map((message) => ({
+  id: message.id,
+  text: message.message,
+  turnId: message.attributes?.["rta.turn_id"],
+  observedSource: message.attributes?.["rta.observed_input_source"] ?? "unknown",
+  declaredSource: message.attributes?.["rta.declared_input_source"],
+  declarationScope: message.attributes?.["rta.input_source_declaration_scope"],
+}));
+```
+
+For an imperative consumer that owns its room's text handler:
+
+```ts
+room.registerTextStreamHandler("lk.chat", async (reader, participant) => {
+  const text = await reader.readAll();
+  await consumeInput({
+    text,
+    senderIdentity: participant.identity,
+    attributes: reader.info.attributes ?? {},
+  });
+});
+```
+
+Choose one handler owner per topic on a room instance; do not register another
+`lk.chat` handler alongside `useChat`. Stream updates share a message ID; update
+the existing record rather than inserting each partial update as a new input.
+The receiving consumer must be connected and subscribed when the message arrives.
+Room messages are not a durable history or an automatic push to an HTTP backend.
+Source attributes require text-stream reception; the legacy `lk-chat-topic`
+compatibility message does not carry these attributes.
+
+This room-message path requires no inference Worker or platform contract changes.
+Attributes are client-reported metadata, not verified facts about audio recognition.
+Automatically tagging RTA's own server STT and returning provenance in the final
+transcript webhook are separate capabilities; this SDK release does not establish
+them. Existing webhook types and behavior are unchanged.
 
 ## Let the character see your camera
 

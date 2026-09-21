@@ -148,7 +148,7 @@ export {
   type TranscriptSenderOptions,
   type UseRealtimeSessionInput,
 } from "../react/use-realtime-session";
-export type { DeclaredInputSource, InputSource, InputProvenance } from "../../../http-client/src/types";
+export type { DeclaredInputSource } from "../input-source";
 export {
   mapTurnState,
   type ApproachingEndReason,

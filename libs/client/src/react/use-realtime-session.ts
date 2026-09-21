@@ -37,7 +37,7 @@ import {
 } from "./grace-window";
 import { nextBehaviorSnapshot, type BehaviorSnapshot } from "./behavior-snapshot";
 import type { SendTextOptions } from "./livekit";
-import type { DeclaredInputSource } from "../../../http-client/src/types";
+import type { DeclaredInputSource } from "../input-source";
 
 export type {
   ApproachingEndReason,

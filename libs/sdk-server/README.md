@@ -143,7 +143,7 @@ Two facts follow from that picture and drive everything else:
 
 ---
 
-## Input source in transcripts
+## Input source on room messages
 
 On React and React Native, `session.sendTurn(text)` automatically observes text.
 For already recognized speech, bind
@@ -155,10 +155,19 @@ recognition engine is included. `instructions` still work on either sender.
 
 `retryTurn()` preserves the resolved source and declaration scope after a timeout,
 with a new `turn_id` and `retry_of_turn_id` pointing to the previous attempt.
-With matching platform and Worker integration, user segments in the signed transcript
-webhook can carry `message_id`, `turn_id`, `retry_of_turn_id`, `input_source`, and
-`input_provenance`. `verifyTranscript` preserves them; legacy fields stay absent and
-must not be interpreted as text. Server-side capture and delivery require that integration.
+Room consumers receive the attributes through the existing `lk.chat` text stream.
+`useChat().chatMessages` exposes them as `message.attributes`; an imperative receiver
+can read `reader.info.attributes` in `registerTextStreamHandler("lk.chat", handler)`.
+The observation is `rta.observed_input_source`; the optional declaration and scope
+are `rta.declared_input_source` and `rta.input_source_declaration_scope`. Missing
+legacy attributes remain unknown. Use one handler owner per topic; a `useChat`
+consumer should not register a duplicate raw handler on the same room.
+
+This path needs no inference or platform changes. The consumer must already be
+connected to the room, and text-stream messages are not durable webhook deliveries.
+The legacy `lk-chat-topic` compatibility path omits attributes. Automatic RTA server
+STT attribution and final transcript webhook provenance are separate work. Existing
+webhook types and behavior are unchanged.
 
 ## API
 

@@ -100,7 +100,7 @@ export {
   type TranscriptSenderOptions,
   type UseRealtimeSessionInput,
 } from "./use-realtime-session";
-export type { DeclaredInputSource, InputSource, InputProvenance } from "../../../http-client/src/types";
+export type { DeclaredInputSource } from "../input-source";
 // Tab-global mic single-flight — the CROSS-call ghost-mic guard (a rapid redial
 // must not acquire getUserMedia before the prior room released it). `useMicLease`
 // is the React binding adopters fold into their mic-intent signal; the pure

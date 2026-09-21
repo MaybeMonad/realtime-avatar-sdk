@@ -419,18 +419,49 @@ export type ClipLibraryUpdate = Wire["PutAvatarClipsResponse"];
  */
 export type LoopRedirect = Wire["PutAvatarLoopResponse"];
 
-/** Input classification from the public transcript contract; absent legacy evidence stays unknown. */
-export type InputSource = Wire["InputSource"];
-
-/** Client declarations cannot claim server recognition or unknown evidence. */
-export type DeclaredInputSource = Wire["DeclaredInputSource"];
-
-/** Automatic observation and developer declaration, preserved independently on a user segment. */
-export type InputProvenance = Wire["InputProvenance"];
-
 /**
- * The signed payload delivered to `CallPolicy.transcript.url` after a call ends.
- * Derived from the public webhook schema, including optional per-user input provenance
- * and existing truncation/interruption signals. Older Workers may omit the new fields.
+ * DERIVATION: hand-written, because the contract does not describe it.
+ *
+ * The transcript webhook body is absent from the published document entirely — not narrowed,
+ * not redacted, absent. So there is nothing to derive from, and this is the only shape here
+ * whose source is a GAP rather than a decision. Fixing it means describing the webhook body
+ * upstream.
  */
-export type TranscriptPayload = Wire["TranscriptPayload"];
+/** The signed payload delivered to `CallPolicy.transcript.url` after a call ends. */
+export interface TranscriptPayload {
+  type: "session.transcript";
+  session_id: string;
+  avatar_id: string;
+  mode: CallMode;
+  started_at: number;
+  ended_at: number;
+  seconds: number;
+  /** True when a very long call exceeded the buffer and the transcript is partial. */
+  truncated: boolean;
+  segments: Array<{
+    role: "user" | "assistant";
+    text: string;
+    ts: number;
+    /** She was cut off — this text is only what she actually said out loud. */
+    interrupted?: boolean;
+  }>;
+  /**
+   * The tool calls the model acted on, in order — absent when the session ran none. An
+   * entry without `ok` means the call produced nothing the model saw. `arguments` and
+   * `result`/`error` are truncated to 2,000 chars each: this is a history, not a replay.
+   */
+  tool_calls?: Array<{
+    name: string;
+    call_id: string;
+    /** The raw JSON arguments string, exactly as the model sent it. */
+    arguments: string;
+    ts: number;
+    ok?: boolean;
+    result?: string;
+    error?: string;
+    duration_ms?: number;
+  }>;
+  /** True when the session ran more tool calls than the buffer holds — the tail is missing. */
+  tool_calls_truncated?: boolean;
+  client_metadata: Record<string, string>;
+}
